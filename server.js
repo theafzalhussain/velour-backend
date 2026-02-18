@@ -10,11 +10,11 @@ const app = express();
 app.use(express.json());
 
 // CORS Configuration: 
-// जब आप अपना Frontend (React) Netlify पर डालेंगे, तो उसका URL यहाँ 'your-netlify-site' की जगह जोड़ देना।
+// localhost और भविष्य के Netlify URL के लिए परमिशन
 const allowedOrigins = [
     'http://localhost:3000', 
-    'http://localhost:5173', // Vite के लिए
-    'https://your-netlify-site.netlify.app' 
+    'http://localhost:5173', 
+    'https://your-netlify-site.netlify.app' // यहाँ बाद में अपना असली Netlify लिंक डाल देना
 ];
 
 app.use(cors({
@@ -29,15 +29,14 @@ app.use(cors({
 }));
 
 // ─── DATABASE CONNECTION ───
-// Render पर MONGO_URI आपने पहले ही सेट कर दी है, तो यह वहां से उठा लेगा।
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ VELOUR MongoDB Atlas Connected"))
+  .then(() => console.log("✅ VELOUR MongoDB Atlas Connected Successfully"))
   .catch(err => {
       console.error("❌ MongoDB Connection Error:", err.message);
-      process.exit(1); // एरर होने पर सर्वर रोक दें
+      // प्रोडक्शन में सर्वर क्रैश न हो इसलिए इसे संभालना ज़रूरी है
   });
 
-// ─── PRODUCT MODEL ───
+// ─── PRODUCT MODEL (Schema) ───
 const ProductSchema = new mongoose.Schema({
     name: { type: String, required: true },
     price: { type: Number, required: true },
@@ -52,7 +51,7 @@ const Product = mongoose.model('Product', ProductSchema);
 
 // ─── API ROUTES ───
 
-// 1. Get All Products
+// 1. Get All Products (यह चेक करने के लिए कि डेटाबेस चल रहा है)
 app.get('/api/products', async (req, res) => {
     try {
         const products = await Product.find();
@@ -62,7 +61,7 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// 2. Add New Product
+// 2. Add New Product (डेटा डालने के लिए)
 app.post('/api/products', async (req, res) => {
     try {
         const newProduct = new Product(req.body);
@@ -78,7 +77,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
     const { amount, currency } = req.body;
     try {
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount * 100), // Stripe को अमाउंट Cents में चाहिए
+            amount: Math.round(amount * 100), 
             currency: currency || 'usd',
             automatic_payment_methods: { enabled: true },
         });
@@ -93,7 +92,7 @@ app.get('/api/config/paypal', (req, res) => {
     res.send(process.env.PAYPAL_CLIENT_ID);
 });
 
-// 5. Root Route (Health Check)
+// 5. Root Route (यह चेक करने के लिए कि सर्वर लाइव है)
 app.get('/', (req, res) => {
     res.status(200).send("VELOUR Premium API is Live and Running...");
 });
@@ -102,7 +101,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`
-    🚀 VELOUR Backend Started
+    🚀 VELOUR Backend Started Successfully
     📍 Port: ${PORT}
     🌐 Mode: ${process.env.NODE_ENV || 'development'}
     `);
